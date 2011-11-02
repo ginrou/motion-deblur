@@ -10,8 +10,6 @@ IplImage *solveCPImage( IplImage* src, IplImage *filter)
 }
 
 
-
-
 CSstruct* createCPStructure( IplImage* input, IplImage* output , int filterSize, CvSize imgSize)
 {
   CSstruct* cs = (CSstruct*)malloc(sizeof(CSstruct));
@@ -118,7 +116,7 @@ void solveCompressiveSensing( CSstruct *cs )
 
     // quit
     printf("cs->eta / g = %lf / %lf = %lf\n", cs->eta, g, cs->eta/g);
-    if( fabs( cs->eta/g ) <= cs->epRel ) break;
+    if(  cs->eta/g  <= cs->epRel ) break;
 
     // update t
     if( pow( cs->beta, K ) >= cs->sMin ){

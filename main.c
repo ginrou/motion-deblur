@@ -15,7 +15,7 @@ int main(int argc, char* argv[] ){
 
   IplImage *original = cvLoadImage( argv[1], CV_LOAD_IMAGE_GRAYSCALE);
   IplImage *captured = cvLoadImage( argv[2], CV_LOAD_IMAGE_GRAYSCALE);
-  int psfSize = 16;
+  int psfSize = 32;
   int psfSizeSquare = psfSize*psfSize;
   CSstruct* cs = createCPStructure( NULL, NULL, psfSizeSquare, cvGetSize( original ));
   printf("create struct done\n");
