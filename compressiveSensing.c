@@ -71,7 +71,7 @@ void solveCompressiveSensing( CSstruct *cs )
 
     // compute search direction
     packForPCG( cs ); // packing
-    PCG( cs->P, cs->b, cs->var, cs->Pinv, 0.1 ); // computing
+    PCG( cs->P, cs->b, cs->var, cs->Pinv, 0.001 ); // computing
     for(int i = 0; i < N; ++i){ // moving to dx, du
       MAT( *cs->dx, i, 0 ) = MAT( *cs->var, i, 0);
       MAT( *cs->du, i, 0 ) = MAT( *cs->var, i+N, 0);
@@ -116,7 +116,9 @@ void solveCompressiveSensing( CSstruct *cs )
 
     // quit
     printf("cs->eta / g = %lf / %lf = %lf\n", cs->eta, g, cs->eta/g);
-    if(  cs->eta/g  <= cs->epRel ) break;
+    if(  fabs(cs->eta/g)  <= cs->epRel ) break;
+    if( K > 50 ) break;
+
 
     // update t
     if( pow( cs->beta, K ) >= cs->sMin ){
@@ -181,7 +183,7 @@ void packForPCG( CSstruct* cs )
       double dxjdxl = 0.0;
       for(int i = 0; i < N; ++i)
 	dxjdxl += MAT( *cs->A, i, j ) * MAT( *cs->A, i, l );
-
+      dxjdxl *= 2.0 * cs->t;
       if( j == l ){
 	dxjdxl += 1.0/ SQUARE( MAT( *cs->u, j, 0) + MAT( *cs->x, j, 0 ) );
 	dxjdxl += 1.0/ SQUARE( MAT( *cs->u, j, 0) - MAT( *cs->x, j, 0 ) );
@@ -234,12 +236,14 @@ void packForPCG( CSstruct* cs )
   cvSetZero( cs->Pinv );
   for(int i = 0; i < N ; ++i){
     double det = MAT(*cs->subMat[0],i,i) * MAT(*cs->subMat[3],i,i) - MAT(*cs->subMat[1],i,i) * MAT(*cs->subMat[2],i,i);
-    MAT( *cs->Pinv, i  , i   ) =  MAT( *cs->subMat[4], i, i ) / det ;
+    MAT( *cs->subMat[3], i, i ) -= cs->t * cs->lambda;
+    MAT( *cs->Pinv, i  , i   ) =  MAT( *cs->subMat[3], i, i ) / det ;
     MAT( *cs->Pinv, i  , i+N ) = -MAT( *cs->subMat[1], i, i ) / det ;
     MAT( *cs->Pinv, i+N, i   ) = -MAT( *cs->subMat[2], i, i ) / det ;
     MAT( *cs->Pinv, i+N, i+N ) =  MAT( *cs->subMat[0], i, i ) / det ;
   }
   
+
 }
 
 
