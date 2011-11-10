@@ -8,7 +8,7 @@
 
 /*
   argv[1] : original image
-  argv[2] : captured image
+  argv[2] : blurred image
   argv[3] : result
  */
 int main(int argc, char* argv[] ){
@@ -54,11 +54,11 @@ int main(int argc, char* argv[] ){
 
   // packing original
   cvSetZero( cs->A );
+
+  printf("size of A : row = %d, col = %d\n", cs->A->rows, cs->A->cols);
+
   for( int h = 0; h < imgSize.height; ++h){
     for( int w = 0; w < imgSize.width; ++w){
-      int y_margin = original->height/2 - imgSize.height/2;
-      int x_margin = original->width/2 - imgSize.width/2;
-
       for( int y = 0;y < psfSize; ++y){
 	for( int x = 0; x < psfSize; ++x){
 	  int row = h * imgSize.width + w;

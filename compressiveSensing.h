@@ -12,52 +12,61 @@
 
 #define MAT( mat, r, c )  (CV_MAT_ELEM( mat, double, r, c ))
 #define SQUARE( a )  ((a)*(a))
+#define cvSetValue( arr, val ) cvSet( arr, cvScalarAll( val ), NULL )
 
-
-//|| Ax - y ||2 をとくための構造体
+//|| Ax - y ||2 + |x|1をとくための構造体
 typedef struct _CSstruct{
   
   // size
-  int xSize; // number of unknown variables
-  int ySize; // number of equations
+  int xSize; // 求める解の次元
+  int ySize; // データ点数
 
-  // input and output data
-  CvMat* A;
-  CvMat* x;
-  CvMat* y;
-  
-  // computing data
-  CvMat* u; // 補助変数みたいなもの
-  CvMat* dx; // 探索方向
-  CvMat* du; // 探索方向
-  double t; // 探索ステップ 
+  // data
+  CvMat* A; // sparse matrix
+  CvMat* x; // argument to minimize
+  CvMat* y; // captured image 
+
+  // arguments for newton method
+  CvMat* u; // バリア変数
+  CvMat* z; // z = Ax-y
+  CvMat* f;
   CvMat* nu; // 双対変数
-  double eta; // 双対ギャップ
-  
-  //For PCG : P*var = -b , solve for var
-  CvMat* subMat[4];
+  double pobj; // 主問題の値
+  double dobj; // 双対問題の値
+  double gap; // 双対ギャップ
+  double t;
+
+  // arguments for PCG
+  CvMat *d1, *d2, *q1, *q2;
+  CvMat* gradPhi;
+  CvMat *prb, *prs;
+  CvMat* dxu;
+  CvMat* diagxtx;
   CvMat* P;
-  CvMat* b;
   CvMat* Pinv;
-  CvMat* var;
-
-  // buffers
-  CvMat* buf; // for convex function ( ySize * 1)
-  CvMat* bufX; // for duality gap scaling parameter ( xSize * 1);
-  CvMat* tmpX;
-  CvMat* tmpU;
-  
 
 
+  // argumetns for backtrack line search
+  CvMat* dx; 
+  CvMat* du;
+  CvMat* newX;
+  CvMat* newU;
+  CvMat* newF;
+  CvMat* newZ;
 
-  // parameters
-  double lambda; // normalize
-  double epRel;  // 許容誤差
-  double alpha;  // x,u を更新する時
-  double beta;  // x,uを更新する時 
-  double mu;  // t を更新する時
-  double sMin; // minimum of scaling constant
-  double nabla;
+
+  // パラメータ
+  double mu; // tの更新パラメータ
+  int MAX_NT_ITER;
+  double alpha;
+  double beta;
+  int MAX_LS_ITER;
+  double lambda; // 更新幅
+  double retol; // 相対許容誤差
+  double eta;
+  double s; // 双対変数のスケーリングパラメータ
+
+
 
 }CSstruct;
 
