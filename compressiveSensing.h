@@ -8,7 +8,6 @@
 #include <cv.h>
 
 
-#include "pcg.h"
 
 #define MAT( mat, r, c )  (CV_MAT_ELEM( mat, double, r, c ))
 #define SQUARE( a )  ((a)*(a))
@@ -44,7 +43,7 @@ typedef struct _CSstruct{
   CvMat* diagxtx;
   CvMat* P;
   CvMat* Pinv;
-
+  CvMat *x1, *x2, *y1, *y2;
 
   // argumetns for backtrack line search
   CvMat* dx; 
@@ -69,7 +68,7 @@ typedef struct _CSstruct{
 
 
 }CSstruct;
-
+#include "pcg.h"
 
 CSstruct* createCPStructure( IplImage* input, IplImage* output , int filterSize, CvSize imgSize);
 

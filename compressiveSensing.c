@@ -1,7 +1,9 @@
 #include "compressiveSensing.h"
 
-double convexFunc( const CSstruct* cs , CvMat* x, CvMat* u);
-void packForPCG( CSstruct* cs );
+// private functions
+void mulA( CSstruct *cs, CvMat* x, CvMat* y);
+void mulPinv( CSstruct *cs, CvMat* x, CvMat* y);
+
 void saveMat( CvMat *mat, char filename[] );
 
 double min( double a, double b ){
@@ -60,6 +62,10 @@ CSstruct* createCPStructure( IplImage* input, IplImage* output , int filterSize,
   cs->diagxtx = cvCreateMat( 2*N, 1 , CV_64FC1);
   cs->P = cvCreateMat( 2*N, 2*N , CV_64FC1);
   cs->Pinv = cvCreateMat( 2*N, 2*N , CV_64FC1);
+  cs->x1 = cvCreateMat( N, 1, CV_64FC1);
+  cs->x2 = cvCreateMat( N, 1, CV_64FC1);
+  cs->y1 = cvCreateMat( N, 1, CV_64FC1);
+  cs->y2 = cvCreateMat( N, 1, CV_64FC1);
 
 
   // argumnets for newton step ( backtrack line search )
@@ -76,12 +82,12 @@ CSstruct* createCPStructure( IplImage* input, IplImage* output , int filterSize,
   cs->alpha = 0.01;
   cs->beta = 0.5;
   cs->MAX_LS_ITER = 100;
-  cs->retol = pow( 10.0, -3 );
+  cs->retol = 0.05;
   cs->lambda = 0.01;
 
   
   // initial values
-  cs->eta = pow( 10.0, -3 );
+  cs->eta = 0.01;
   cs->t = min( max( 1, 1/cs->lambda), 2*N / pow(10, -3) );
   cs->s = DBL_MAX;
   cs->pobj = DBL_MAX;
@@ -149,7 +155,7 @@ void solveCompressiveSensing( CSstruct *cs )
     /*                     UPDATE t                              */
     /*************************************************************/
     if( cs->s >= 0.5 )
-      cs->t = max( min( 2*N*cs->mu/ cs->gap, cs->mu*cs->t ), cs->t );
+      cs->t = max( cs->mu * min( 2.0*(double)N/ cs->gap, cs->t ), cs->t );
     printf("t=%lf\n", cs->t);
 
     
@@ -183,47 +189,46 @@ void solveCompressiveSensing( CSstruct *cs )
     double normg = cvNorm( cs->gradPhi, NULL, CV_L2, NULL );
     double pcgtol = min( 0.1, cs->eta* cs->gap / min( 1.0, normg ));
 
-    // calculate P
-    // p = [ A'A*2 + d1 , d2 ]
-    //     [     d2     , d1 ]
-    cvSetZero( cs->P );
+    /* // calculate P */
+    /* // p = [ A'A*2 + d1 , d2 ] */
+    /* //     [     d2     , d1 ] */
+    /* cvSetZero( cs->P ); */
+    /* //cvMulTransposed( cs->A, tmpNN, 0, NULL, 1.0 ); */
+    /* for( int r = 0; r < N; ++r){ */
+    /*   for( int c = 0; c < N; ++c){ */
+    /* 	MAT( *cs->P, r, c) = 0.0; */
+    /* 	for(int i=0; i < M; ++i) */
+    /* 	  MAT( *cs->P, r, c) += 2.0*MAT(*cs->A, i, r ) * MAT( *cs->A, i, c ); */
+    /*   } */
+    /*   printf("r=%d done\n", r); */
+    /* } */
+    /* for( int i = 0; i < N ; ++i){ */
+    /*   MAT( *cs->P, i  , i   ) += MAT( *cs->d1, i, 0); */
+    /*   MAT( *cs->P, i  , i+N ) = MAT( *cs->d2, i, 0); */
+    /*   MAT( *cs->P, i+N, i   ) = MAT( *cs->d2, i, 0); */
+    /*   MAT( *cs->P, i+N, i+N ) = MAT( *cs->d1, i, 0); */
+    /* } */
+
+    /* // calculate Preconditoner ( Pinv ) */
+    /* // Pinv = [ P1, -P2] */
+    /* //        [-P2,  P3] */
+    /* // P1 = d1 / prs */
+    /* // P2 = d2 / prs */
+    /* // P3 = prb/ prs */
+    /* cvSetZero( cs->Pinv ); */
+    /* for( int i = 0; i < N; ++i){ */
+    /*   MAT( *cs->Pinv, i  , i   ) =  MAT( *cs->d1, i, 0 ) / MAT( *cs->prs, i, 0 ); */
+    /*   MAT( *cs->Pinv, i  , i+N ) = -MAT( *cs->d2, i, 0 ) / MAT( *cs->prs, i, 0 ); */
+    /*   MAT( *cs->Pinv, i+N, i   ) = -MAT( *cs->d1, i, 0 ) / MAT( *cs->prs, i, 0 ); */
+    /*   MAT( *cs->Pinv, i+N, i+N ) =  MAT( *cs->prb, i, 0 ) / MAT( *cs->prs, i, 0 ); */
+    /* } */
 
 
-
-    //cvMulTransposed( cs->A, tmpNN, 0, NULL, 1.0 );
-    for( int r = 0; r < N; ++r){
-      for( int c = 0; c < N; ++c){
-	MAT( *cs->P, r, c) = 0.0;
-	for(int i=0; i < M; ++i)
-	  MAT( *cs->P, r, c) += 2.0*MAT(*cs->A, i, r ) * MAT( *cs->A, i, c );
-      }
-      printf("r=%d done\n", r);
-    }
-
-
-    for( int i = 0; i < N ; ++i){
-      MAT( *cs->P, i  , i   ) += MAT( *cs->d1, i, 0);
-      MAT( *cs->P, i  , i+N ) = MAT( *cs->d2, i, 0);
-      MAT( *cs->P, i+N, i   ) = MAT( *cs->d2, i, 0);
-      MAT( *cs->P, i+N, i+N ) = MAT( *cs->d1, i, 0);
-    }
-
-    // calculate Preconditoner ( Pinv )
-    // Pinv = [ P1, -P2]
-    //        [-P2,  P3]
-    // P1 = d1 / prs
-    // P2 = d2 / prs
-    // P3 = prb/ prs
-    cvSetZero( cs->Pinv );
-    for( int i = 0; i < N; ++i){
-      MAT( *cs->Pinv, i  , i   ) =  MAT( *cs->d1, i, 0 ) / MAT( *cs->prs, i, 0 );
-      MAT( *cs->Pinv, i  , i+N ) = -MAT( *cs->d2, i, 0 ) / MAT( *cs->prs, i, 0 );
-      MAT( *cs->Pinv, i+N, i   ) = -MAT( *cs->d1, i, 0 ) / MAT( *cs->prs, i, 0 );
-      MAT( *cs->Pinv, i+N, i+N ) =  MAT( *cs->prb, i, 0 ) / MAT( *cs->prs, i, 0 );
-    }
+    printf("run PCG ... pcgtol = %lf\n", pcgtol);
     // run PCG
     cvConvertScale( cs->gradPhi, cs->gradPhi, -1.0, 0.0);
-    PCG( cs->P, cs->gradPhi, cs->dxu, cs->Pinv, pcgtol );
+    //PCG( cs->P, cs->gradPhi, cs->dxu, cs->Pinv, pcgtol );
+    PCG_MatMulOperator( mulA, cs->gradPhi, cs->dxu, mulPinv, pcgtol, cs );
     cvConvertScale( cs->gradPhi, cs->gradPhi, -1.0, 0.0);
 
 
@@ -285,12 +290,66 @@ void solveCompressiveSensing( CSstruct *cs )
 
 }
 
-double convexFunc( const CSstruct* cs , CvMat* x, CvMat* u)
-{
+
+
+void mulA( CSstruct *cs, CvMat* x, CvMat* y){
+  /*****************************************
+   y = hes_phi * x
+   where hes_phi 
+   = [ A'*A * 2 + d1 , d2]
+     [       d2      , d1]
+   ****************************************/
+  int N = x->rows/2;
+
+  // x = [x1; x2]
+  for( int i = 0; i < N; ++i){
+    MAT( *cs->x1, i, 0 ) = MAT( *x, i, 0);
+    MAT( *cs->x2, i, 0 ) = MAT( *x, i+N, 0);
+  }
+  
+  // y = [y1; y2]
+  cvSetZero(cs->y1); cvSetZero(cs->y2);
+  
+  CvMat* tmp = cvCreateMat( cs->A->rows, 1, CV_64FC1);
+
+  // y1 = 2A' (A*x1) + d1.*x1 + d2.*x1
+  // y2 = d2.*x1 + d1.*x2
+  cvMatMul( cs->A, cs->x1, tmp ); // tmp = A*x1
+  cvGEMM(cs->A, tmp, 2.0 , NULL, 0.0, cs->y1, CV_GEMM_A_T); // y1 = 2 * A'tmp = 2 * A'(A*x1)
+  for( int i = 0; i < N; ++i){
+    MAT( *cs->y1, i, 0) += MAT(*cs->d1, i, 0)*MAT(*cs->x1, i, 0) + MAT(*cs->d2, i, 0)*MAT(*cs->x2, i, 0);
+    MAT( *cs->y2, i, 0) += MAT(*cs->d2, i, 0)*MAT(*cs->x1, i, 0) + MAT(*cs->d1, i, 0)*MAT(*cs->x2, i, 0);
+  }
+
+  for(int i = 0; i < N; ++i){
+    MAT( *y, i, 0 ) = MAT( *cs->y1, i, 0 );
+    MAT( *y, i+N, 0 ) = MAT( *cs->y2, i, 0 );
+  }
+
+  cvReleaseMat( &tmp );
+
+  return;
 
 }
 
-void packForPCG( CSstruct* cs )
-{
 
+void mulPinv( CSstruct *cs, CvMat* x, CvMat* y)
+{
+  /****************************************
+   y = Pinv * x
+   where Pinv = [ p1 , -p2]
+                [-p2 ,  p3]
+     where p1(i) = d1(i) / prs(i)
+           p2(i) = d2(i) / prs(i)
+           p3(i) = prb(i) / prs(i)
+   ****************************************/
+  int N = x->rows/2;
+  for(int i = 0; i < N; ++i){
+    double p1 = MAT( *cs->d1, i, 0 ) / MAT( *cs->prs, i, 0 );
+    double p2 = MAT( *cs->d2, i, 0 ) / MAT( *cs->prs, i, 0 );
+    double p3 = MAT( *cs->prb, i, 0 ) / MAT( *cs->prs, i, 0 );
+
+    MAT( *y, i, 0 )   =  p1 * MAT( *x, i, 0 ) - p2 * MAT( *x, i+N, 0);
+    MAT( *y, i+N, 0 ) = -p2 * MAT( *x, i, 0 ) + p3 * MAT( *x, i+N, 0);
+  }
 }

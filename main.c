@@ -17,7 +17,7 @@ int main(int argc, char* argv[] ){
   IplImage *buf = cvLoadImage( argv[2], CV_LOAD_IMAGE_GRAYSCALE);
   IplImage *captured;
 
-  CvSize imgSize = cvSize( 360, 360 );
+  CvSize imgSize = cvSize( 480, 480 );
   int psfSize = 16;
   int psfSizeSquare = psfSize*psfSize;
 
@@ -59,12 +59,14 @@ int main(int argc, char* argv[] ){
 
   for( int h = 0; h < imgSize.height; ++h){
     for( int w = 0; w < imgSize.width; ++w){
+      int y_margin = captured->height/2 - imgSize.height/2;
+      int x_margin = captured->width/2 - imgSize.width/2;
       for( int y = 0;y < psfSize; ++y){
 	for( int x = 0; x < psfSize; ++x){
 	  int row = h * imgSize.width + w;
 	  int col = y * psfSize + x;
-	  int Xidx = w + x - psfSize/2;
-	  int Yidx = h + y - psfSize/2;
+	  int Xidx = w + x - psfSize/2 + x_margin;
+	  int Yidx = h + y - psfSize/2 + y_margin;
 	  if( Yidx < 0 || Yidx >= original->height || Xidx < 0 || Xidx >= original->width ) continue;
 	  else CV_MAT_ELEM( *cs->A, double, row, col ) = (double)CV_IMAGE_ELEM( original, uchar, Yidx, Xidx) / 256.0;
 	}

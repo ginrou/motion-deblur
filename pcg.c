@@ -65,3 +65,56 @@ void PCG( CvMat* A, CvMat* b, CvMat* x, CvMat* Pinv, double th)
 
 }
 
+void PCG_MatMulOperator( void(*mulA)( CSstruct* cs, CvMat* u, CvMat* y), 
+			 CvMat* b, CvMat* x, 
+			 void(*mulPinv)( CSstruct* cs, CvMat* u, CvMat* y), 
+			 double th, CSstruct* cs)
+{
+  int dim = x->rows;
+
+  // initlaize
+  int k = 0;
+  int i;
+  //cvSetZero(x);
+  CvMat* r = cvCloneMat(b);
+  CvMat* p = cvCreateMat( dim, 1, CV_64FC1);
+  mulPinv( cs, b, p); // <-- changed Pinv
+  CvMat* y = cvCreateMat( dim, 1, CV_64FC1);
+  mulPinv( cs, r, y); // <-- changed Pinv
+  CvMat* z = cvCreateMat( dim, 1, CV_64FC1);
+
+  //iteration
+  while(1){
+    k++;
+    mulA( cs, p, z ); // <-- changed mulA
+    double prevDot = cvDotProduct( y, r);
+    double v = prevDot / cvDotProduct( p, z);
+    
+    for( i = 0; i < dim; ++i){
+      MAT( *x, i, 0 ) += v * MAT( *p, i, 0);
+      MAT( *r, i, 0 ) -= v * MAT( *z, i, 0);
+    }
+    
+    mulPinv( cs, r, y);  // <-- changed mulPinv
+    double mu = cvDotProduct( y, r) / prevDot;
+    double norm = cvNorm( r, NULL, CV_L2, NULL );
+    if( norm < th ) break;
+    if( k > dim ) break;
+    else{
+      for(i=0;i<dim;++i)
+	MAT( *p, i, 0) = MAT( *y, i, 0 ) + mu * MAT( *p, i, 0 );
+    }//else
+
+    printf("iteration %d\t", k);
+    printf("err = %lf\n", norm);
+
+
+  }// while
+
+  cvReleaseMat( &r );
+  cvReleaseMat( &p );
+  cvReleaseMat( &y );
+  cvReleaseMat( &z );
+
+  return;
+}
