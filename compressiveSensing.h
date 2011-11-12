@@ -70,12 +70,13 @@ typedef struct _CSstruct{
 }CSstruct;
 #include "pcg.h"
 
-CSstruct* createCPStructure( IplImage* input, IplImage* output , int filterSize, CvSize imgSize);
-
+CSstruct* createCPStructure( int filterSize, int imgSize);
 void releaseCPStructure( CSstruct *cp );
-
 IplImage *solveCPImage( IplImage* src, IplImage *filter);
-
 void solveCompressiveSensing( CSstruct *cs );
+
+void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs);
+void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs);
+
 
 #endif

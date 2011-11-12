@@ -1,0 +1,125 @@
+bash-3.2$ ls
+Desktop		Dropbox		Movies		Prime95		opencv
+Documents	Library		Music		Public
+Downloads	Mail		Pictures	Sites
+bash-3.2$ pwd
+/Users/takeda
+bash-3.2$ cd Documents/mudapro/motion\ deblur/
+bash-3.2$ ls
+#compressiveSensing.c#	compressiveSensing.h	main.out
+Ax-y.txt		compressiveSensing.o	motionBlurred.png
+Ax.txt			estimated.png		pcg.c
+Makefile		flower.png		pcg.h
+PSF.png			l1_ls_matlab		pcg.o
+README			lenna.png		x.txt
+blurredLenna.png	main.c			y.txt
+compressiveSensing.c	main.o
+bash-3.2$ make
+gcc compressiveSensing.c -std=c99 -c -o compressiveSensing.o  `pkg-config --cflags opencv` 
+compressiveSensing.c: In function 'packImageToCSStructVarianceAligned':
+compressiveSensing.c:225: error: 'original' undeclared (first use in this function)
+compressiveSensing.c:225: error: (Each undeclared identifier is reported only once
+compressiveSensing.c:225: error: for each function it appears in.)
+make: *** [compressiveSensing.o] Error 1
+bash-3.2$ make
+gcc compressiveSensing.c -std=c99 -c -o compressiveSensing.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ make
+gcc main.c -std=c99 -c -o main.o  `pkg-config --cflags opencv` 
+main.c: In function 'main':
+main.c:43: warning: passing argument 1 of 'createCPStructure' makes integer from pointer without a cast
+main.c:43: warning: passing argument 2 of 'createCPStructure' makes integer from pointer without a cast
+main.c:43: error: too many arguments to function 'createCPStructure'
+make: *** [main.o] Error 1
+bash-3.2$ make
+gcc main.c -std=c99 -c -o main.o  `pkg-config --cflags opencv` 
+gcc compressiveSensing.c -std=c99 -c -o compressiveSensing.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+Assertion failed: ((unsigned)(row) < (unsigned)(*cs->y).rows && (unsigned)(0) < (unsigned)(*cs->y).cols), function packImageToCSStruct, file compressiveSensing.c, line 125.
+  C-c C-cAbort trap
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+Assertion failed: ((unsigned)(row) < (unsigned)(*cs->y).rows && (unsigned)(0) < (unsigned)(*cs->y).cols), function packImageToCSStruct, file compressiveSensing.c, line 125.
+Abort trap
+bash-3.2$ make
+gcc main.c -std=c99 -c -o main.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ make
+make: `main.out' is up to date.
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+Assertion failed: ((unsigned)(row) < (unsigned)(*cs->y).rows && (unsigned)(0) < (unsigned)(*cs->y).cols), function packImageToCSStruct, file compressiveSensing.c, line 125.
+Abort trap
+bash-3.2$ make
+gcc compressiveSensing.c -std=c99 -c -o compressiveSensing.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+Assertion failed: ((unsigned)(row) < (unsigned)(*cs->y).rows && (unsigned)(0) < (unsigned)(*cs->y).cols), function packImageToCSStruct, file compressiveSensing.c, line 126.
+Abort trap
+bash-3.2$ make
+gcc main.c -std=c99 -c -o main.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+Assertion failed: ((unsigned)(row) < (unsigned)(*cs->y).rows && (unsigned)(0) < (unsigned)(*cs->y).cols), function packImageToCSStruct, file compressiveSensing.c, line 126.
+Abort trap
+bash-3.2$ make
+gcc compressiveSensing.c -std=c99 -c -o compressiveSensing.o  `pkg-config --cflags opencv` 
+gcc -std=c99 -o main.out main.o pcg.o compressiveSensing.o `pkg-config --cflags opencv`   `pkg-config --libs opencv` -lm
+bash-3.2$ ./main.out lenna.png blurredLenna.png estimated.png 
+create struct done
+packing done
+gap / dobj = 5300545.395630, retol = 0.050000
+t=200.000000
+run PCG ... pcgtol = 0.100000
+iteration 1	err = 3629.014573
+iteration 2	err = 2408.061645
+iteration 3	err = 565.644849
+iteration 4	err = 382.022066
+iteration 5	err = 275.881860
+iteration 6	err = 1718.309043
+iteration 7	err = 106.117909
+iteration 8	err = 58.316497
+iteration 9	err = 62.469370
+iteration 10	err = 34.537524
+iteration 11	err = 106.670624
+iteration 12	err = 27.656727
+iteration 13	err = 14.807319
+iteration 14	err = 13.455098
+iteration 15	err = 6.753247
+iteration 16	err = 7.383258
+iteration 17	err = 47.295775
+iteration 18	err = 16.863659
+iteration 19	err = 5.112553
+iteration 20	err = 5.114595
+iteration 21	err = 2.995144
+iteration 22	err = 15.799446
+iteration 23	err = 10.206316
+iteration 24	err = 2.816510
+iteration 25	err = 7.410285
+iteration 26	err = 4.020310
+iteration 27	err = 2.702759
+iteration 28	err = 9.474382
+iteration 29	err = 7.614006
+iteration 30	err = 4.064747
+iteration 31	err = 24.626517
+iteration 32	err = 5.773490
+iteration 33	err = 72.493292
+iteration 34	err = 6.150504
+iteration 35	err = 4.376978
+iteration 36	err = 5.579807
+iteration 37	err = 6.691857
+iteration 38	err = 71.316742
+iteration 39	err = 22.154805
+iteration 40	err = 15.187566
+iteration 41	err = 10.980408
+iteration 42	err = 8.456020
+iteration 43	err = 32.326811
+iteration 44	err = 24.425290
+iteration 45	err = 26.796258
+iteration 46	err = 7.558759
+iteration 47	err = 10.807970
+iteration 48	err = 8.686291

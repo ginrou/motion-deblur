@@ -82,8 +82,8 @@ CSstruct* createCPStructure( int filterSize, int  imgSize)
   cs->alpha = 0.01;
   cs->beta = 0.5;
   cs->MAX_LS_ITER = 100;
-  cs->retol = 0.02;
-  cs->lambda = 0.01;
+  cs->retol = 0.05;
+  cs->lambda = 0.005;
 
   
   // initial values
@@ -112,8 +112,6 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
   
   int y_margin = input->height/2 - imgSize.height/2;
   int x_margin = input->width/2 - imgSize.width/2;
-  
-  printf("");
 
   for( int h = 0; h < imgSize.height; ++h){
     for( int w = 0 ; w < imgSize.width; ++w){
@@ -123,8 +121,7 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
       /*****************************************/
       y = h + y_margin;
       x = w + x_margin;
-      if( y < 0 || y>= output->height || x < 0 || x>= output->width ) continue;
-      int row = h * imgSize.width + w;
+      int row = y * imgSize.width + w;
       MAT( *cs->y, row, 0 ) = (double)CV_IMAGE_ELEM( output, uchar, y, x) / 256.0;
 
       
@@ -144,9 +141,6 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
       }//y
     }//w
   }//h
-
-  printf("packing done\n");
-
 }
 
 void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs)
@@ -227,15 +221,18 @@ void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSi
       for( int x = 0; x < psfSize.width; ++x){
 	int py = h + y -psfSize.height/2;
 	int px = w + x -psfSize.width /2;
-	int col = y*psfSize.width+x;
-	if( py<0 || py>= input->height || px < 0 || px >=input->width){
-	  MAT(*cs->A, i, col ) = 0.0;
+	int
+	if( py<0 || py>= original->height || px < 0 || px >=original->width){
+	  MAT
 	}else{
-	  MAT(*cs->A, i, col ) = (double)CV_IMAGE_ELEM(input, uchar, py, px)/256.0;
-	}// else
-      }// x
-    }// y
-  }// i
+
+	}
+
+
+      }
+    }
+
+  }
 
   cvReleaseMat( &varMat);
   cvReleaseMat( &meanMat);
