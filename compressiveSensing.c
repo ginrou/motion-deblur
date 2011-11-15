@@ -83,7 +83,7 @@ CSstruct* createCPStructure( int filterSize, int  imgSize)
   cs->beta = 0.5;
   cs->MAX_LS_ITER = 100;
   cs->retol = 0.02;
-  cs->lambda = 0.01;
+  cs->lambda = 1.0;
 
   
   // initial values
@@ -113,8 +113,6 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
   int y_margin = input->height/2 - imgSize.height/2;
   int x_margin = input->width/2 - imgSize.width/2;
   
-  printf("");
-
   for( int h = 0; h < imgSize.height; ++h){
     for( int w = 0 ; w < imgSize.width; ++w){
       int y, x;
@@ -123,7 +121,7 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
       /*****************************************/
       y = h + y_margin;
       x = w + x_margin;
-      if( y < 0 || y>= output->height || x < 0 || x>= output->width ) continue;
+      if(  y>= output->height || x>= output->width ) continue;
       int row = h * imgSize.width + w;
       MAT( *cs->y, row, 0 ) = (double)CV_IMAGE_ELEM( output, uchar, y, x) / 256.0;
 
@@ -276,7 +274,7 @@ void solveCompressiveSensing( CSstruct *cs )
 
     // pobj = z'z + lambda * |x|1
     cs->pobj = cvDotProduct( cs->z, cs->z ) + cs->lambda * cvNorm( cs->x, NULL, CV_L1, NULL);
-    // dobj = max( nu'nu / 4 - nu'y, pobj )
+    // dobj = max( nu'nu / 4 - nu'y, dobj )
     cs->dobj = max( -0.25* cvDotProduct( cs->nu,cs->nu) - cvDotProduct( cs->nu, cs->y ), cs->dobj);
     cs->gap = cs->pobj - cs->dobj;
 
@@ -284,6 +282,7 @@ void solveCompressiveSensing( CSstruct *cs )
     /*************************************************************/
     /*                 STOPPING CRITERON                         */
     /*************************************************************/
+    printf("pobj = %lf, dobj = %lf, gap = %lf\n", cs->pobj, cs->dobj, cs->gap);
     printf("gap / dobj = %lf, retol = %lf\n", cs->gap/cs->dobj, cs->retol);
     if( cs->gap / cs->dobj < cs->retol ) break;
 
@@ -293,7 +292,7 @@ void solveCompressiveSensing( CSstruct *cs )
     /*                     UPDATE t                              */
     /*************************************************************/
     if( cs->s >= 0.5 )
-      cs->t = max( cs->mu * min( 2.0*(double)N/ cs->gap, cs->t ), cs->t );
+      cs->t = max(  min( cs->mu*2.0*(double)N/ cs->mu*cs->gap, cs->t ), cs->t );
     printf("t=%lf\n", cs->t);
 
     
@@ -325,12 +324,11 @@ void solveCompressiveSensing( CSstruct *cs )
 
     // set PCG relatave torerance
     double normg = cvNorm( cs->gradPhi, NULL, CV_L2, NULL );
-    double pcgtol = min( 0.1, cs->eta* cs->gap / min( 1.0, normg ));
+    double pcgtol = min( 0.01, cs->eta* cs->gap / min( 1.0, normg ));
 
     printf("run PCG ... pcgtol = %lf\n", pcgtol);
     // run PCG
     cvConvertScale( cs->gradPhi, cs->gradPhi, -1.0, 0.0);
-    //PCG( cs->P, cs->gradPhi, cs->dxu, cs->Pinv, pcgtol );
     PCG_MatMulOperator( mulA, cs->gradPhi, cs->dxu, mulPinv, pcgtol, cs );
     cvConvertScale( cs->gradPhi, cs->gradPhi, -1.0, 0.0);
 
@@ -352,8 +350,9 @@ void solveCompressiveSensing( CSstruct *cs )
 
     cs->s = 1.0;
     double gdx = cvDotProduct( cs->gradPhi, cs->dxu );
-
-    for( int k = 0; k < cs->MAX_LS_ITER; ++k){
+    int k;
+    double newPhi ;
+    for( k = 0; k < cs->MAX_LS_ITER; ++k){
       cvScaleAdd( cs->dx, cvScalarAll(cs->s), cs->x, cs->newX); // newX = x + s*dx
       cvScaleAdd( cs->du, cvScalarAll(cs->s), cs->u, cs->newU); // newU = u + s*du
 
@@ -368,7 +367,7 @@ void solveCompressiveSensing( CSstruct *cs )
 
       if( NonNegativeFlag == 0 ){
 	cvGEMM( cs->A, cs->newX, 1.0, cs->y, -1.0, cs->newZ, 0 );
-	double newPhi 
+	newPhi
 	  = cvDotProduct( cs->newZ, cs->newZ ) + cs->lambda * cvSum( cs->newU ).val[0] ;
 	for(int i = 0; i < N; ++i)
 	  newPhi -= log( -MAT( *cs->newF, i, 0 ) ) / cs->t;
@@ -379,9 +378,12 @@ void solveCompressiveSensing( CSstruct *cs )
 
       cs->s *= cs->beta;
     }//k 
-
+    printf("k = %d newphi = %lf\n", k, newPhi);
     cvConvert( cs->newX, cs->x);
     cvConvert( cs->newU, cs->u);
+    cvConvert( cs->newF, cs->f);
+
+    if( k == cs->MAX_LS_ITER ) break;
 
   }// main loop
 

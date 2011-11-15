@@ -5,6 +5,7 @@
 
 #include "pcg.h"
 #include "compressiveSensing.h"
+#include "motionDeblur.h"
 
 /*
   argv[1] : original image
@@ -19,7 +20,7 @@ int main(int argc, char* argv[] ){
 
   
 
-  CvSize imgSize = cvSize( 480, 480 );
+  CvSize imgSize = cvSize( 320, 320 );
   int psfSize = 16;
   int psfSizeSquare = psfSize*psfSize;
 
@@ -38,10 +39,19 @@ int main(int argc, char* argv[] ){
     cvSaveImage( "blurredLenna.png", captured, &piyo);
   }
 
+
+  MotionDBL *mdbl = createMotionDBLStruct( captured, cvSize( psfSize, psfSize ));
+  solveMotionDeblurring(mdbl);
+  IplImage *dst = cvCreateImage( cvGetSize(captured), IPL_DEPTH_8U, 1);
+  cvConvertScale( mdbl->original, dst, 256.0, 0.0);
+  cvSaveImage( argv[3], dst, 0);
+  return 0;
+
+  // debug for compressive sensing
+
   CSstruct* cs = createCPStructure( psfSizeSquare, imgSize.width*imgSize.height);
   printf("create struct done\n");
   packImageToCSStruct( original, captured, imgSize, cvSize(psfSize, psfSize), cs);
-
   
   solveCompressiveSensing( cs );
 

@@ -65,8 +65,6 @@ typedef struct _CSstruct{
   double eta;
   double s; // 双対変数のスケーリングパラメータ
 
-
-
 }CSstruct;
 #include "pcg.h"
 

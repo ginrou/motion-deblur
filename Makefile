@@ -2,7 +2,7 @@
 
 MAINFILE = main.c
 TARGET   = ${MAINFILE:.c=.out}
-SRCS = ${MAINFILE} pcg.c compressiveSensing.c
+SRCS = ${MAINFILE} pcg.c compressiveSensing.c motionDeblur.c
 OBJS := ${SRCS:.c=.o}
 
 CC = gcc
