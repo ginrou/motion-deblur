@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <cv.h>
+#include <highgui.h>
+
 
 #include "compressiveSensing.h"
 
@@ -37,24 +39,32 @@ typedef struct _MDBL{
   CvMat *SmoothRegion; // Omega in paper which is for hogehoge
   
   // variables for L step
+  CvMat* Captured[2]; // 撮影画像のフーリエ変換
+  CvMat* Filter[2];
+  CvMat* Latent[2];
   CvMat* GradSum[2]; // gradSum = sum_of( weight(k) * |F( diff_operator)|
   CvMat* Grad_X[2];  // x方向の微分フィルタのフーリエ変換
   CvMat* Grad_Y[2];  // y方向の微分フィルタのフーリエ変換
-  CvMat* Captured[2]; // 撮影画像のフーリエ変換
-  CvMat* Filter[2];
   CvMat* Psi_X[2];
   CvMat* Psi_Y[2];
   CvMat* FFTRegion;
 
+  // variables for stopping criterion
+  // these keep previous estimated values
+  CvMat *prevOriginal;
+  CvMat *prevPsiX;
+  CvMat *prevPsiY;
+  CvMat *prevPSF;
 
   // variablse for f step which update PSF 
   int CSRows; // pixels used to solve Compressive Sampling
   CSstruct *cs;
 
-
   // parameters 
   double lambda[2];
   double gamma;
+  double L_TH;
+
 
 }MotionDBL;
 
@@ -70,11 +80,14 @@ typedef enum _gradDirection{
 }gradDirection;
 void gradient( CvMat* src, CvMat* dst, gradDirection dir);
 
-// parameters
+// initial parameters
 #define INIT_WEIGHT 50.0
 #define LAMBDA_0 0.01
 #define LAMBDA_1 20.0
+#define KAPPA_0 1.25
+#define KAPPA_1 1.5
 #define INIT_GAMMA 2.0
+#define L_STEP_TH 0.0005
 #define CS_ROWS_RATIO 100.0 // %
 
 

@@ -18,8 +18,6 @@ int main(int argc, char* argv[] ){
   IplImage *buf = cvLoadImage( argv[2], CV_LOAD_IMAGE_GRAYSCALE);
   IplImage *captured;
 
-  
-
   CvSize imgSize = cvSize( 320, 320 );
   int psfSize = 16;
   int psfSizeSquare = psfSize*psfSize;
@@ -39,7 +37,7 @@ int main(int argc, char* argv[] ){
     cvSaveImage( "blurredLenna.png", captured, &piyo);
   }
 
-
+  // motion deblurring
   MotionDBL *mdbl = createMotionDBLStruct( captured, cvSize( psfSize, psfSize ));
   solveMotionDeblurring(mdbl);
   IplImage *dst = cvCreateImage( cvGetSize(captured), IPL_DEPTH_8U, 1);

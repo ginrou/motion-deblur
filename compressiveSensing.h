@@ -1,13 +1,10 @@
 #ifndef __COMPRESSIVE__
 #define __COMPRESSIVE__
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <cv.h>
-
-
 
 #define MAT( mat, r, c )  (CV_MAT_ELEM( mat, double, r, c ))
 #define SQUARE( a )  ((a)*(a))
@@ -66,6 +63,7 @@ typedef struct _CSstruct{
   double s; // 双対変数のスケーリングパラメータ
 
 }CSstruct;
+
 #include "pcg.h"
 
 CSstruct* createCPStructure( int filterSize, int imgSize);
@@ -73,8 +71,19 @@ void releaseCPStructure( CSstruct *cp );
 IplImage *solveCPImage( IplImage* src, IplImage *filter);
 void solveCompressiveSensing( CSstruct *cs );
 
+
+// packing and unpacking functions
 void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs);
+void packImageToCSStructMat( CvMat* input, CvMat* output, CvSize imgSize, CvSize psfSize, CSstruct *cs);
 void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs);
+
+void unpackCSStrutct2Mat( CSstruct* cs, CvMat *mat );
+
+
+
+
+double min( double a, double b );
+double max( double a, double b );
 
 
 #endif

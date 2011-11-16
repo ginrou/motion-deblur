@@ -147,6 +147,50 @@ void packImageToCSStruct( IplImage* input, IplImage* output, CvSize imgSize, CvS
 
 }
 
+void packImageToCSStructMat( CvMat* input, CvMat* output, CvSize imgSize, CvSize psfSize, CSstruct *cs)
+{
+  int N = cs->x->rows;
+  int M = cs->y->rows;
+  
+  int y_margin = input->rows/2 - imgSize.height/2;
+  int x_margin = input->cols/2 - imgSize.width/2;
+  
+  for( int h = 0; h < imgSize.height; ++h){
+    for( int w = 0 ; w < imgSize.width; ++w){
+      int y, x;
+      /*****************************************/
+      /*             CAPTURED IMAGE            */
+      /*****************************************/
+      y = h + y_margin;
+      x = w + x_margin;
+      if(  y>= output->rows || x>= output->cols ) continue;
+      int row = h * imgSize.width + w;
+      MAT( *cs->y, row, 0 ) = MAT( *output, y, x);
+
+      
+      /*****************************************/
+      /*            ORIGINAL IMAGE             */
+      /*****************************************/
+      for( y = 0; y < psfSize.height; ++y){
+	for( x = 0; x < psfSize.width; ++x){
+	  int col = y*psfSize.width+x;
+	  int py = h + y -psfSize.height/2 + y_margin;
+	  int px = w + x -psfSize.width/2 + x_margin;
+	  if( py < 0 || py >= input->rows || px < 0 || px >= input->cols)
+	    continue;
+	  else
+	    MAT( *cs->A, row, col) = MAT( *input, py, px );
+	}//x
+      }//y
+    }//w
+  }//h
+
+  printf("packing done\n");
+
+}
+
+
+
 void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSize imgSize, CvSize psfSize, CSstruct *cs)
 {
   CvMat *meanMat = cvCreateMat( imgSize.height, imgSize.width , CV_64FC1);
@@ -240,6 +284,19 @@ void packImageToCSStructVarianceAligned( IplImage* input, IplImage* output, CvSi
   cvReleaseMat( &selectedRows);
   return;
 }
+
+void unpackCSStrutct2Mat( CSstruct* cs, CvMat *mat )
+{
+  for( int r = 0; r < mat->rows; ++r){
+    for( int c = 0; c < mat->cols; ++c){
+      int idx = r*mat->cols+c;
+      MAT( *mat, r, c) = MAT( *cs->x, idx, 0);
+    }
+  }
+
+}
+
+
 
 
 void solveCompressiveSensing( CSstruct *cs )
